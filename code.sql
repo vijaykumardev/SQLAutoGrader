@@ -18,9 +18,15 @@ v_score int:=0;
 v_col_count int:=0;
 v_row_left_diff int:=0;
 v_row_right_diff int:=0;
+v_projection varchar[];
+v_temp varchar[];
 begin
-select array_to_string(regexp_matches(solution_query,'select ([a-zA-Z_0-9 ,]*) from','g'),',') into v_columns;
+select array_to_string(regexp_matches(solution_query,'select ([.a-zA-Z_0-9 (as),]*) from','g'),',') into v_columns;
 select regexp_split_to_array(v_columns, ',') into v_result;
+for v_loop_var in 1..array_length(v_result,1) loop
+select regexp_split_to_array(v_result[v_loop_var],'[. ]') into v_temp;
+v_result[v_loop_var]:=v_temp[array_length(v_temp,1)];
+end loop;
 v_count:=compare_tables_func(submitted_query,v_result);
 for v_loop_var in 1..array_length(v_result,1) loop
 v_filter:=v_filter||' (case when A.'||v_result[v_loop_var]||E' is null then \'0\' else a.'||v_result[v_loop_var]||' end)=(case when B.'||v_result[v_loop_var]||E' is null then \'0\' else b.'||v_result[v_loop_var]||' end) and';
@@ -32,7 +38,7 @@ execute v_build_query into v_row_right_diff,v_row_count;
 v_col_count:=length(regexp_replace('emp,table,dept,office','[^,]','','g'))+1;
 --formula is retrived count/expected count
 --v_score:=((v_count*v_row_count)+((v_row_left_diff+v_row_right_diff)*v_col_count))*100/(v_col_count*v_row_count);
-return v_build_query;
+return  v_row_right_diff||','||v_row_count;
 end;
 $$ language 'plpgsql' strict;
 
@@ -291,3 +297,42 @@ $$ language 'plpgsql' strict;
 /*
 select preprocess_int_rel_func('select first_name,surname,born,died from people where born between 1950 and 1960 and died between 1960 and 1990 and not people.died < people.born ');
 */
+
+create or replace function mysql_to_pgsql_func(varchar) returns varchar  as
+$$
+/* if mod operator (%) is present then first operand will be replaced with nullif(operand,'0')::int to convert it into integer */
+declare
+v_sql alias for $1;
+v_mod_var varchar[];
+v_pattern varchar;
+v_replace varchar;
+v_instr_array varchar[];
+begin
+v_sql:=preprocess_despace_func(v_sql);
+
+/* when mod is present */
+for v_instr_array in select regexp_matches(v_sql,'([(a-zA-Z]{1,2}[)a-zA-Z0-9_.]+) %','g') loop
+v_pattern:=v_instr_array[1]||' %';
+v_replace:='nullif('||v_instr_array[1]||E',\'0\')::int %';
+v_sql:=replace(v_sql,v_pattern,v_replace);
+end loop;
+
+/* when in case statement */
+for v_instr_array in select regexp_matches(v_sql,'case ([(a-zA-Z]{1,2}[)a-zA-Z0-9_.]+) when ([-]{0,1}[0-9.]+){1}','g') loop
+v_pattern:='case '||v_instr_array[1]||' when';
+v_replace:='case nullif('||v_instr_array[1]||E',\'0\')::int when';
+v_sql:=replace(v_sql,v_pattern,v_replace);
+end loop;
+
+/* when filter is present */
+for v_instr_array in select regexp_matches(v_sql,'([a-zA-Z]{1}[a-zA-Z0-9.]*){1} ([=><!]{1,2}) ([-]{0,1}[0-9.]*){1}','g') loop
+v_pattern:=v_instr_array[1]||' '||v_instr_array[2]||' '||v_instr_array[3];
+v_replace:='nullif('||v_instr_array[1]||E',\'0\')::int '||v_instr_array[2]||' '||v_instr_array[3];
+v_sql:=replace(v_sql,v_pattern,v_replace);
+end loop;
+
+return  v_sql;
+end;
+$$ language 'plpgsql' strict;
+
+/* select mysql_to_pgsql_func(E'select title, case (released) when 1997 then \'Before\' when 1998 then \'Exact\' when 1999 then \'After\' end from albums where released % 4 =  0 and year = 1997 and released = 5'); */
