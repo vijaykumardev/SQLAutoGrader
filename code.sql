@@ -45,7 +45,6 @@ $$ language 'plpgsql' strict;
 /*
 Test cases for compare_query_result_func
 select compare_query_result_func('select first_name,surname,born,died from people where born between 1970 and 1972 and died is not null','select first_name,surname,born,died from people where born in (1970,1972) and died is not null');
-
 select compare_query_result_func(E'select first_name,surname,born,died from people where surname=\'Aamani\' ',E'select first_name,surname,born,died from people where surname=\'Aamani\' ');
 */
 
@@ -89,6 +88,10 @@ v_column_list varchar:='';
 v_column_temp varchar;
 v_alias_check bool[];
 v_table_nonalias varchar:='';
+v_column_alias varchar[];
+v_column_alias_elem varchar[];
+v_column_from_pat varchar;
+v_column_to_pat varchar;
 begin
 select regexp_split_to_array(array_to_string(regexp_matches(v_src_query,'from ([a-zA-Z_0-9 ,]*) where','g'),','),',') into v_tables;
 
@@ -98,6 +101,7 @@ if trim(v_tables[v_count]) like '% %' then
 v_table_alias:=regexp_split_to_array(v_tables[v_count],' ');
 v_table_nonalias:=v_table_nonalias||','||v_table_alias[1];
 --regexp_replace(v_dest_query,alias_name,table_name)
+--select albums.title from albums where albums.relealbumssed is null; fix released instead of relealbumssed
 v_dest_query:=regexp_replace(v_dest_query,(v_table_alias[2]),(v_table_alias[1]),'g');
 else
 v_table_nonalias:=v_table_nonalias||','||v_tables[v_count];
@@ -124,10 +128,24 @@ end if;
 end loop;
 v_dest_query:=regexp_replace(v_dest_query,'\*',v_column_list);
 end if;
+
+--Replacing any column alias name with full name in the query
+select regexp_matches(array_to_string(regexp_matches(v_dest_query,'select ([()a-zA-Z_0-9 ,.]*) from'),','),'([()a-zA-Z_0-9.]+ [()a-zA-Z_0-9]+)') into v_column_alias;
+if array_length(v_column_alias,1)>0 then
+for v_count in 1..array_upper(v_column_alias,1) loop
+v_column_alias_elem:=regexp_split_to_array(v_column_alias[v_count],' ');
+--duplicate column_alias is present 'count(album_id) count(album_id)' to be replaced with single 'count(album_id)' for below query
+--select preprocess_query_func(E'select ab.artist_id, count(album_id) c from artist_album ab where group by ab.artist_id having c >=5');
+--select regexp_replace(regexp_replace(v_column_alias_elem[2],E'\\)',E'\\\\\\)'),E'\\(',E'\\\\\\(') into v_column_to_pat;
+--select regexp_replace(regexp_replace(v_column_alias_elem[1],E'\\)',E'\\\\\\)'),E'\\(',E'\\\\\\(') into v_column_from_pat;
+v_dest_query:=regexp_replace(v_dest_query,('[^a-zA-Z0-9]'||v_column_alias_elem[2]||'[^a-zA-Z0-9]'),' '||v_column_alias_elem[1]||' ','g');
+--v_dest_query:=regexp_replace(v_dest_query,v_column_alias_elem[1]||' '||v_column_alias_elem[1],v_column_alias_elem[1]);
+end loop;
+end if;
+
 return v_dest_query;
 end;
 $$ language 'plpgsql' strict;
-
 /*
 select preprocess_query_func(E'select * from people p,movies m where p.died is not null and p.surname=\'a\'');
 */
@@ -309,7 +327,7 @@ v_replace varchar;
 v_instr_array varchar[];
 begin
 v_sql:=preprocess_despace_func(v_sql);
-
+v_sql:=preprocess_query_func(v_sql);
 /* when mod is present */
 for v_instr_array in select regexp_matches(v_sql,'([(a-zA-Z]{1,2}[)a-zA-Z0-9_.]+) %','g') loop
 v_pattern:=v_instr_array[1]||' %';
