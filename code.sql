@@ -45,7 +45,6 @@ $$ language 'plpgsql' strict;
 /*
 Test cases for compare_query_result_func
 select compare_query_result_func('select first_name,surname,born,died from people where born between 1970 and 1972 and died is not null','select first_name,surname,born,died from people where born in (1970,1972) and died is not null');
-
 select compare_query_result_func(E'select first_name,surname,born,died from people where surname=\'Aamani\' ',E'select first_name,surname,born,died from people where surname=\'Aamani\' ');
 */
 
@@ -89,6 +88,11 @@ v_column_list varchar:='';
 v_column_temp varchar;
 v_alias_check bool[];
 v_table_nonalias varchar:='';
+v_column_alias varchar[];
+v_column_alias_elem varchar[];
+v_column_from_pat varchar;
+v_column_to_pat varchar;
+v_replace boolean:=true;
 begin
 select regexp_split_to_array(array_to_string(regexp_matches(v_src_query,'from ([a-zA-Z_0-9 ,]*) where','g'),','),',') into v_tables;
 
@@ -97,7 +101,7 @@ for v_count in 1..array_upper(v_tables,1) loop
 if trim(v_tables[v_count]) like '% %' then
 v_table_alias:=regexp_split_to_array(v_tables[v_count],' ');
 v_table_nonalias:=v_table_nonalias||','||v_table_alias[1];
---replaces alias name of table with full name in rest of the query
+--replaces alias name of table with full name in rest of the query 
 v_dest_query:=replace(v_dest_query,(v_table_alias[2])||'.',(v_table_alias[1])||'.');
 else
 v_table_nonalias:=v_table_nonalias||','||v_tables[v_count];
@@ -110,7 +114,7 @@ v_dest_query:=regexp_replace(v_dest_query,'from ([a-zA-Z_0-9 ,]*) where','from '
 v_tables:=regexp_split_to_array(v_table_nonalias,',');
 
 --Replace * in projection with the table_name.column_name
-if v_src_query LIKE '%\*%' then
+if v_src_query LIKE '%*%' and v_src_query not like 'count(*)' then
 for v_count in 1..array_upper(v_tables,1) loop
 
 select v_tables[v_count]||'.'||string_agg(column_name,','||v_tables[v_count]||'.') from information_schema.columns where table_name=v_tables[v_count] into v_column_temp;
@@ -122,12 +126,33 @@ v_column_list:=v_column_list||','||v_column_temp;
 end if;
 
 end loop;
-v_dest_query:=regexp_replace(v_dest_query,'\*',v_column_list);
+v_dest_query:=regexp_replace(v_dest_query,'[, ]{1}[\*]{1}[, ]{1}',' '||v_column_list||' ');
 end if;
+
+--Replacing any column alias name with full name in the query
+select regexp_matches(array_to_string(regexp_matches(v_dest_query,'select ([()a-zA-Z_0-9 ,.]*) from'),','),'([()a-zA-Z_0-9.]+ [()a-zA-Z_0-9]+)') into v_column_alias;
+if array_length(v_column_alias,1)>0 then
+for v_count in 1..array_upper(v_column_alias,1) loop
+v_column_alias_elem:=regexp_split_to_array(v_column_alias[v_count],' ');
+	--skip if any aggregate function is present
+	if v_column_alias_elem[1] like 'count(%' or v_column_alias_elem[1] like 'min(%' or v_column_alias_elem[1] like 'max(%' or v_column_alias_elem[1] like 'sum(%' or v_column_alias_elem[1] like 'avg(%' or v_column_alias_elem[1] like 'count(%' or v_column_alias_elem[1] like '(%' then
+	if trim(v_column_alias_elem[array_length(v_column_alias_elem,1)]) like '%)'  then
+	v_replace:=false;
+	end if;
+	end if;
+	if v_replace  then
+	--v_dest_query:=regexp_replace(v_dest_query,('[^a-zA-Z0-9]'||v_column_alias_elem[2]||'[^a-zA-Z0-9]'),' '||v_column_alias_elem[1]||' ');
+	v_dest_query:=replace(v_dest_query,(' '||v_column_alias_elem[2]||' '),' '||v_column_alias_elem[1]||' ');
+	--duplicate column_alias like 'count(album_id) count(album_id)' replaces with single 'count(album_id)' for below query
+	--select preprocess_query_func(E'select ab.artist_id, count(album_id) c from artist_album ab where group by ab.artist_id having c >=5');
+	v_dest_query:=replace(v_dest_query,v_column_alias_elem[1]||' '||v_column_alias_elem[1],v_column_alias_elem[1]);
+	end if;
+end loop;
+end if;
+
 return v_dest_query;
 end;
 $$ language 'plpgsql' strict;
-
 /*
 select preprocess_query_func(E'select * from people p,movies m where p.died is not null and p.surname=\'a\' and m.title=\'a\'');
 */
@@ -309,7 +334,7 @@ v_replace varchar;
 v_instr_array varchar[];
 begin
 v_sql:=preprocess_despace_func(v_sql);
-
+v_sql:=preprocess_query_func(v_sql);
 /* when mod is present */
 for v_instr_array in select regexp_matches(v_sql,'([(a-zA-Z]{1,2}[)a-zA-Z0-9_.]+) %','g') loop
 v_pattern:=v_instr_array[1]||' %';
@@ -321,6 +346,13 @@ end loop;
 for v_instr_array in select regexp_matches(v_sql,'case ([(a-zA-Z]{1,2}[)a-zA-Z0-9_.]+) when ([-]{0,1}[0-9.]+){1}','g') loop
 v_pattern:='case '||v_instr_array[1]||' when';
 v_replace:='case nullif('||v_instr_array[1]||E',\'0\')::int when';
+v_sql:=replace(v_sql,v_pattern,v_replace);
+end loop;
+
+/* when in between statement */
+for v_instr_array in select regexp_matches(v_sql,'([(a-zA-Z]{1,2}[)a-zA-Z0-9_.]+) between ([-]{0,1}[0-9.]+){1}','g') loop
+v_pattern:=v_instr_array[1]||' between';
+v_replace:='nullif('||v_instr_array[1]||E',\'0\')::int between';
 v_sql:=replace(v_sql,v_pattern,v_replace);
 end loop;
 
