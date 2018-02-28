@@ -1,0 +1,58 @@
+<% if(typeof query != 'undefined' ){ %>
+    <h3><%= query %></h3>
+    <div id="collapsible-panels">
+    
+    <h4><a href="#">
+        Query Output
+    </a></h4>
+    <% } %>
+        <% if(typeof result != 'undefined' ){ %>
+            <div><%  if(!err){ %>
+                <table>
+                    <tr>
+                        <% fields.forEach((item)=>{ %>
+                            <th>
+                                <%= item.title %>
+                            </th>
+                            <% }) %>
+                    </tr>
+                    <% for(var i in result){ %>
+                        <tr>
+                            <% for(var j in result[i]){ %>
+                                <td>
+                                    <%= result[i][j] %>
+                                </td>
+                                <% } %>
+                        </tr>
+                        <% } %>
+                </table>
+                <%  } else { %>
+                    <h4>
+                        <%= result.sqlMessage %>
+                    </h4>
+                    <% } %></div>
+                        <%  } %>
+                        <% if(typeof jsonquery != 'undefined'){ %>
+                        <h4><a href="#">
+                            Query clauses
+                        </a></h4>
+                        <div class="container">
+                            <h4>Query 1: <%= query %></h4>
+                            Select:<%= jsonquery.select %><br>               
+                            From:<%= jsonquery.from %><br>
+                            Where:<%= jsonquery.where %><br>
+                            Order by:<%= jsonquery.orderby %><br>
+                            Group by:<%= jsonquery.groupby %><br>
+                            Limit:<%= jsonquery.limit %><br><br>
+                        <% if(typeof jsonquery1 != 'undefined'){ %>
+                            <h4>Query 2: <%= query1 %></h4>
+                                    Select:<%= jsonquery1.select %><br>
+                                    From:<%= jsonquery1.from %><br>
+                                    Where:<%= jsonquery1.where %><br>
+                                    Order by:<%= jsonquery1.orderby %><br>
+                                    Group by:<%= jsonquery1.groupby %><br>
+                                    Limit:<%= jsonquery1.limit %><br>
+                       <% } %>
+                        </div>
+                    <% } %>
+                </div>

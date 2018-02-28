@@ -1,0 +1,21 @@
+{
+  "name": "autograder",
+  "version": "1.0.0",
+  "description": "Takes a query file containing a set of query and executes in database to check the correctness of query displaying the result in html page",
+  "main": "app/app.js",
+  "scripts": {
+    "test": "node server.js",
+    "start": "nodemon -e css,ejs,js,json --watch app app/app.js"
+  },
+  "author": "vijay",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.5.7",
+    "express": "^4.16.2",
+    "mysql": "^2.15.0",
+    "node-sqlparser": "^1.0.2",
+    "pg": "^7.4.1",
+    "querystring": "^0.2.0",
+    "reload": "^2.2.2"
+  }
+}

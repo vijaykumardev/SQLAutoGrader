@@ -1,0 +1,39 @@
+<form method='POST'>
+    <% if(pageID == 'home' || pageID == 'mysql' || pageID === 'postgres'){ %> 
+  <fieldset>
+      <label for='name'>Login ID</label>
+      <input type='text' name='name' placeholder="Enter your login-id" required>
+    </fieldset>
+    <fieldset>
+      <label for='password'>Password</label>
+      <input type='password' name='password' placeholder="Enter password here" required>
+    </fieldset>
+  <% } %>
+  <% if( pageID === 'home' ) { %> 
+    <fieldset>
+      <input type="radio" id="MySql" name="database" value="mysql">
+      <label for="database">MySQL</label>
+      <input type='radio' id='Postgres' name='database' value="postgres">
+      <label for='database'>Postgres</label>
+    </fieldset>
+    <fieldset>
+      <label for='filename'>File name</label>
+      <input type='text' name='filename' />
+    </fieldset>
+    <% } %>
+    <% if ( pageID == 'mysql-result' || pageID === 'postgres-result' ) { %>
+      
+          <h4><%= user %></h4>
+          <h4><%= pageID %></h4>
+          <input type='submit' value='Go Back' />
+    <% } %>      
+    <% if ( pageID === 'mysql' || pageID === 'postgres' ) { %>
+      <fieldset>
+        <label for='query'>Query</label>
+        <textarea name="query" rows="5" cols="50" placeholder="Write your query here" wrap="soft"></textarea>
+      </fieldset>
+<% } %>
+<% if (pageID === 'home' || pageID === 'mysql' || pageID === 'postgres' ) { %> 
+<input type='submit' value='run' />
+   <% } %>
+  </form>

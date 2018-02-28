@@ -1,0 +1,17 @@
+<!doctype html>
+
+<head>
+  <% include partials/template/head.ejs %>
+</head>
+
+<body id="<%= pageID %>">
+  <div class="container">
+  <% include partials/template/maininput.ejs %>
+</div>
+  <% if(pageID==='mysql-result'||pageID==='postgres-result') { %>
+    <% include partials/template/queryoutput.ejs %>
+  <% } %>
+      <% include partials/template/jsdefaults.ejs %>
+</body>
+
+</html>
