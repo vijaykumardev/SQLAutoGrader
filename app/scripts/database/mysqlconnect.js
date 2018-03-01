@@ -32,7 +32,7 @@ function executequery(query,connection){
                  returnVal = {
                 query : query,
                 err : true,
-                result : err,
+                result : err.sqlMessage,
                 fields : null
                  }
                 
@@ -49,39 +49,6 @@ function executequery(query,connection){
     })
 }
 
-// function runInMySQL(params){
-//     return new Promise((resolve,reject)=>{
-//         var pool = mysql.createConnection({  
-//             host     : 'mysql.cis.ksu.edu',  
-//             user     : params.name,  
-//             password : params.password,  
-//             database : params.name   
-//             })
-        
-//         var returnVal = {}
-//             pool.query(params.query, function(err, rows, fields)   
-//             {  
-                
-//                 if (err){
-//                     returnVal = {
-//                         'query' : params.query,
-//                         'err' : true,
-//                         'result' : err,
-//                         'fields' : null
-//                     }
-//                 } else{
-//                 returnVal = {
-//                     'query' : params.query,
-//                     'err' : false,
-//                     'result' : rows,
-//                     'fields' : fields
-//                 }
-//                 }
-//                 resolve(returnVal)
-//             })
-    
-//     }) 
-// }
 
 module.exports = {
     establishconnection :establishconnection,

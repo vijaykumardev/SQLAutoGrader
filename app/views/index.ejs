@@ -11,7 +11,9 @@
   <% if(pageID==='mysql-result'||pageID==='postgres-result') { %>
     <% include partials/template/queryoutput.ejs %>
   <% } %>
+  <% if(pageID==='queries-result') { %>
+    <% include partials/template/multiqueryoutput.ejs %>
+  <% } %>
       <% include partials/template/jsdefaults.ejs %>
 </body>
-
 </html>

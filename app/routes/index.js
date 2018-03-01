@@ -19,12 +19,19 @@ router.post('/',function (req,res){
     //TODO check why the execution is not going inside loadfile promise
     loadfile.loadFile(req.body.filename).then((data)=>{
         if(req.body.database=='mysql'){
-            mysql.establishconnection(req).then((connection)=>{
+            mysql.establishconnection(req.body).then((connection)=>{
                 runqueries.runMultipleQuries(data,req.body.database,connection).then((promises)=>{
                     Promise.all(promises).then((item)=>{
                         //TODO Call parse query function parsesql.simquery when function is working
-                        result += item
+                        result.push(item)
                         return result
+                    }).then((result)=>{
+                        //send result of all execution to front end through response object
+                        res.render('index',{
+                            pageTitle: 'Queries Result',
+                            pageID: 'queries-result',
+                            result: result
+                        })
                     }) //Promise.all
                 }).catch((databaseinvaliderr)=>{
                     result += {

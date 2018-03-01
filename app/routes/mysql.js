@@ -32,43 +32,4 @@ router.post('/mysql',(req,res)=>{
     })
 })
 
-//     mysqlConnect.runMySQLQuery(req.body).then((values)=>{
-//         parsesql.simquery(values.query).then((jsonquery)=>{
-//         if(req.body.query1!=undefined){
-//             parsesql.simquery(req.body.query1).then((jsonquery1)=>{
-//                 console.log(jsonquery1)
-//                 res.render('index',{
-//                     pageTitle: 'MySQL result',
-//                     pageID: 'mysql-result',
-//                     user: req.body.name,
-//                     query: values.query,
-//                     query1: req.body.query1,
-//                     err: values.err,
-//                     result:values.result,
-//                     fields:values.fields,
-//                     jsonquery: jsonquery,
-//                     jsonquery1: jsonquery1
-//                 })
-    
-//             })
-//         }else{
-//             res.render('index',{
-//                 pageTitle: 'MySQL result',
-//                 pageID: 'mysql-result',
-//                 user: req.body.name,
-//                 query: values.query,
-//                 err: values.err,
-//                 result:values.result,
-//                 fields:values.fields,
-//                 jsonquery: jsonquery
-//             })
-//         }
-        
-        
-//         })
-        
-//     })
-    
-// })
-
 module.exports = router

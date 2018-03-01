@@ -1,0 +1,29 @@
+<div id="collapsible-panels">
+    <% if(typeof result != undefined ) { %>
+        <% for(var i=0; i < result.length;i++){ %>
+            <% for(var j=0;j < result[i].length;j++){ %>
+                <h4> <a href="#"><%= result[i][j].query %> </a></h4>
+                <div>
+                    <table>
+                        <% if(result[i][j].err===true){ %>
+                            <tr> <%= result[i][j].result %> </tr>
+                        <% } else { %>
+                            <tr> <% result[i][j].fields.forEach((field) => { %> <th> <%= field.name %> </th> <% }) %> </tr>
+                                <% for(var k in result[i][j].result){ %>
+                                    <tr> <% for(var l in result[i][j].result[k]) { %> <td> <%= result[i][j].result[k][l] %> </td> <% } %> </tr>
+                                    <% } %>
+                      <%  } %>
+                    </table>
+                </div>
+                <%  } %>
+                <% } %>
+        <% result.forEach((item) => { %>
+            <h4><a href="#"> <%= item.query %> </a></h4>
+            <% if(item.err === true){ %>
+                <%= item.result %>
+            <% } else { %>
+                
+            <% } %>            
+            <% }) %>
+         <% } %>
+</div>
