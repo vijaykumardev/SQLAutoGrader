@@ -1,30 +1,41 @@
 var express = require('express')
 var router = express.Router()
+const fs = require('fs')
+
+const pgconnect = require('../scripts/database/pgconnect')
+const parsesql = require('../scripts/queryparse/parsesql')
 
 router.get('/postgres',(req,res)=>{
-    var fs = req.app.get('fs')
-    res.end(fs.readFileSync('app/public/html/execute.html'))
+    res.render('index',{
+        pageTitle: 'Postgres SQL',
+        pageID: 'postgres',
+        name: req.session.user.name
+    })
 })
 
 router.post('/postgres',(req,res)=>{
-    pool = mysql.createConnection({  
-        host     : 'mysql.cis.ksu.edu',  
-        user     : 'vijayv',  
-        password : '4JqcY8Tw',  
-        database : 'vijayv'   
+    pgconnect.establishconnection(req.session.user).then((connection)=>{
+        pgconnect.executequery(req.body.query,connection).then((result)=>{
+                res.render('index',{
+                    pageTitle: 'Postgres result',
+                    pageID: 'postgres-result',
+                    name: req.session.user.name,
+                    query: req.body.query,
+                    err: result.err,
+                    result: result.result,
+                    fields: result.fields
+                }) 
         })
-    var query = 'SELECT title, released FROM albums WHERE released % 4 = 0'
-    pool.query(query, function(err, rows, fields)   
-    {  
-        var returnVal = '<h2><a href="#">'+query+'</h2></a> \n'
-        if (err){
-            returnVal += '<div><p style="color:red;">Error:'+err+'</p></div> \n'
-            res.send(returnVal)
-        } else{
-        returnVal += makeTable(rows,fields)
-        res.send(returnVal)
-        }
-    });
+    }).catch((err)=>{
+        res.render('index',{
+            pageTitle: 'Postgres result',
+            pageID: 'postgres-result',
+            err:true,
+            user: req.session.user.name,
+            query: req.body.query,
+            result: 'Error while connecting to datbase '+req.body.database+'\n'+err
+        })
+    }) // implement reject case
 })
 
 module.exports = router

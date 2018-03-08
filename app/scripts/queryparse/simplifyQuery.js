@@ -1,10 +1,9 @@
 var parse = require('node-sqlparser').parse;
 var stringify = require('node-sqlparser').stringify;
+const preparse = require('./pre-parser')
+const jsonframework = require('./jsonframework')
 
-var subVar = new Map()
-var subVarIndex=0
-var mJSONformat = new Map()
-var paranSearch = /\([^)]*\)/
+const paranSearch = /\([^)]*\)/
 
 /**@function removeSpace
  * remove unwanted addtional spaces
@@ -37,48 +36,59 @@ function parseSQL(inVar){
     }
 }
 
-/**@function indexSearch
+/**@function reduceSubQuery
  * @description Searches all inner query and functions and simplifies main query
  * @param {string} inVar - query as string
- * @return {string} inVar - string with all inner queries removed with alias name which is stored in mapVar variable
+ * @return {JSON} inVar - json consists of query string with all inner queries replaced with variable rep_string, store and index counter value
+ * @requires run replaceFunction before running this
+ * @example console.log(reduceSubQuery(removeSpace("SELECT ((SELECT COUNT(album_id) FROM albums WHERE released IS 'NOT NULL') / (SELECT COUNT(DISTINCT released) FROM albums)) AS avgAlbums"),new Map(),0))
+ * 
+ * SELECT rep_string_4 AS avgAlbums
+{ result: 'SELECT rep_string_4 AS avgAlbums',
+  store:
+   Map {
+     'rep_string_0' => 'COUNT(album_id)',
+     'rep_string_1' => '(SELECT rep_string_0 FROM albums WHERE released IS \'NOT NULL\')',
+     'rep_string_2' => 'COUNT(DISTINCT released)',
+     'rep_string_3' => '(SELECT rep_string_2 FROM albums)',
+     ' rep_string_4' => '(rep_string_1 /rep_string_3)' },
+  index: 5 }
  */
-function indexSearch(inVar){
+function reduceSubQuery(inVar,variableStore,storeIndex){
     var res = paranSearch.exec(inVar)
     var repVal=''
     var before=''
     var subRes=''
+    var parsedSQL = {}
     while(res){
     subRes = res[0].slice(res[0].lastIndexOf("(")) 
     if(subRes){
-        repVal='m_replace_val_'+subVarIndex
+        repVal=preparse.stringReplaceVal+storeIndex
         
         if(!/^\(select/i.exec(subRes)){
             before=inVar.slice(inVar.lastIndexOf(' ',inVar.indexOf(subRes))+1,inVar.indexOf(subRes))
-            console.log('String before:'+before)
             if(!/(select|where|from|group by|having|order by|limit)/i.exec(before))
                 subRes=before+subRes
             else
                 repVal=' '+repVal
-            }else{
-                //repVal=' '+repVal
-                //console.log(subRes.slice(1,-1))
-                //console.log(parse(subRes.slice(1,-1)))
             }
-            subVar.set(repVal,subRes)
-            subVarIndex++
-            console.log('parsing:'+subRes+'\nparsed:'+parseSQL(subRes))
+            parsedSQL = parseSQL(subRes)
+            variableStore.set(repVal,/^\(select/i.exec(subRes)?jsonframework.innerQuery(parsedSQL):parsedSQL.columns)
+            storeIndex++
         inVar=inVar.replace(subRes,repVal)
-        console.log(inVar)
     }
     res=paranSearch.exec(inVar)
     }
     
-    return inVar
+    return {
+                result:inVar,
+                store:variableStore,
+                index:storeIndex
+    }
 }
 
 
-console.log(indexSearch(removeSpace("SELECT ((SELECT COUNT(album_id) FROM albums WHERE released IS 'NOT NULL') / (SELECT COUNT(DISTINCT released) FROM albums)) AS avgAlbums")))
-//console.log(subVar.keys())
+console.log(reduceSubQuery(removeSpace("SELECT ((SELECT COUNT(album_id) FROM albums WHERE released IS 'NOT NULL') / (SELECT COUNT(DISTINCT released) FROM albums)) AS avgAlbums"),new Map(),0))
 
 /**
  * @function printMap
@@ -97,22 +107,3 @@ function printMap(subVar){
     // }
 })
 }
-
-const havingTemplate = "select 1 from dual where 1=1 and "
-var havingJSON = JSON.parse('{"having":null}')
-/**@function buildHavingJSON
- * @description Converts the having clause to where genrating the JSON then adding that to having JSON
- * Uses ('node-sqlparser').parse and ('node-sqlparser').stringify libraries
- * @param inVar {string} - having clause condition
- * @return havingJSON {JSON} - JSON format of the having condition
- * @example buildHavingJSON('album_id=21')
- */
-function buildHavingJSON(inVar){
-    var astObj = parse(havingTemplate+inVar)
-    
-    //having clause is generated in right side after first where condition
-    havingJSON.having=astObj.where.right
-    return havingJSON
-}
-
-module.exports = buildHavingJSON

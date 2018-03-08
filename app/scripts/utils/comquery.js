@@ -14,4 +14,9 @@ UNION
     ON A.a = b.a and a.b = b.b and a.c = b.c
 ) 
 WHERE a.a is null or b.a is null`
+
+    console.log(combquery)
+
 }
+
+checkcombquery('select * from albums','select * from artist')

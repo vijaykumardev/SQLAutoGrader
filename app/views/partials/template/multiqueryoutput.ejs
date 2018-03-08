@@ -8,7 +8,7 @@
                         <% if(result[i][j].err===true){ %>
                             <tr> <%= result[i][j].result %> </tr>
                         <% } else { %>
-                            <tr> <% result[i][j].fields.forEach((field) => { %> <th> <%= field.name %> </th> <% }) %> </tr>
+                            <tr> <% result[i][j].fields.forEach((fieldname) => { %> <th> <%= fieldname %> </th> <% }) %> </tr>
                                 <% for(var k in result[i][j].result){ %>
                                     <tr> <% for(var l in result[i][j].result[k]) { %> <td> <%= result[i][j].result[k][l] %> </td> <% } %> </tr>
                                     <% } %>

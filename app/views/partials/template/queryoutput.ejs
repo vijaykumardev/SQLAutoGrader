@@ -12,7 +12,7 @@
                     <tr>
                         <% fields.forEach((item)=>{ %>
                             <th>
-                                <%= item.title %>
+                                <%= item %>
                             </th>
                             <% }) %>
                     </tr>
@@ -28,7 +28,7 @@
                 </table>
                 <%  } else { %>
                     <h4>
-                        <%= result.sqlMessage %>
+                        <%= result %>
                     </h4>
                     <% } %></div>
                         <%  } %>

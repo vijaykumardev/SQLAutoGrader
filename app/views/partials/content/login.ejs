@@ -1,0 +1,68 @@
+<!-- views/login.ejs -->
+<!doctype html>
+<html>
+<head>
+    <title>Node Authentication</title>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css"> <!-- load bootstrap css -->
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"> <!-- load fontawesome -->
+    <style>
+        body        { padding-top:80px; }
+    </style>
+</head>
+<body>
+<div class="container">
+
+<div class="col-sm-6 col-sm-offset-3">
+
+    <h1><span class="fa fa-sign-in"></span> Login</h1>
+    <% if (typeof warning!='undefined') { %>
+        <div class="alert alert-warning" role="alert"><%= warning %></div>
+    <% } %>
+    <!-- show any messages that come back with authentication -->
+    <% if (typeof message!='undefined') { %>
+        <div class="alert alert-danger" role='alert'><%= message %></div>
+    <% } %>
+
+    <!-- LOGIN FORM -->
+    <form action="/login" method="post">
+        <div class="form-group">
+            <label>User ID</label>
+            <input type="text" class="form-control" name="name" id='name' required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" class="form-control" name="password" id='password' required>
+        </div>
+        <div class="form-group">
+            <label>Database</label>
+            <select name="database" class="form-control" required> <!--Supplement an id here instead of using 'text'-->
+                <option value="mysql" selected>MySQL</option>
+                <option value="postgres">Postgres</option>
+              </select>
+        </div>
+        <button type="submit" class="btn btn-warning btn-lg">Login</button>
+    </form>
+
+    <hr>
+
+    <p>Or go <a href="/">home</a>.</p>
+
+</div>
+
+</div>
+<script>
+    $(document).ready(()=>{
+        if(typeof name!='undefined'){
+        document.getElementById('name').value = name
+    }
+    if(typeof password!='undefined'){
+        document.getElementById('password').value = password
+    }
+    if(typeof database!='undefined'){
+        document.getElementByName('database').value = database
+    }
+    })
+    
+</script>
+</body>
+</html>

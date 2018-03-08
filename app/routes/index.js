@@ -4,6 +4,7 @@ var router = express.Router()
 const loadfile = require('../scripts/file/loadfile')
 const runqueries = require('../scripts/utils/runqueries')
 const mysql = require('../scripts/database/mysqlconnect')
+const pg = require('../scripts/database/pgconnect')
 
 router.get('/',(req,res)=>{
     //app.set('user',req.body.user)
@@ -16,10 +17,15 @@ router.get('/',(req,res)=>{
 
 router.post('/',function (req,res){
     var result = []
-    //TODO check why the execution is not going inside loadfile promise
     loadfile.loadFile(req.body.filename).then((data)=>{
-        if(req.body.database=='mysql'){
-            mysql.establishconnection(req.body).then((connection)=>{
+        var establishconnection = null
+        if(req.body.database==='mysql'){
+            establishconnection = mysql.establishconnection
+        } else if(req.body.database === 'postgres') {
+            establishconnection = pg.establishconnection
+        }
+        //TODO use establishconnection for single execution
+            establishconnection(req.body).then((connection)=>{
                 runqueries.runMultipleQuries(data,req.body.database,connection).then((promises)=>{
                     Promise.all(promises).then((item)=>{
                         //TODO Call parse query function parsesql.simquery when function is working
@@ -42,7 +48,6 @@ router.post('/',function (req,res){
                     }
                 }) //runqueries.runMultipleQuries
             }) //mysql.establishconnection
-        } //if mysql
     }).catch((err)=>{
         // if file does not exists
         result = {

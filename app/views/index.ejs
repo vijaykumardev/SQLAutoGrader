@@ -3,17 +3,23 @@
 <head>
   <% include partials/template/head.ejs %>
 </head>
-
+<style>
+    body        { padding-top:80px; }
+</style>
 <body id="<%= pageID %>">
   <div class="container">
+          <div class="col-sm-6 col-sm-offset-3">
   <% include partials/template/maininput.ejs %>
-</div>
   <% if(pageID==='mysql-result'||pageID==='postgres-result') { %>
     <% include partials/template/queryoutput.ejs %>
   <% } %>
+</div>    
+    
+
   <% if(pageID==='queries-result') { %>
     <% include partials/template/multiqueryoutput.ejs %>
   <% } %>
+</div>
       <% include partials/template/jsdefaults.ejs %>
 </body>
 </html>

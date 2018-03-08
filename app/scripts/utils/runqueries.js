@@ -1,4 +1,5 @@
 const mysqlconnect = require('../database/mysqlconnect')
+const pgconnect = require('../database/pgconnect')
 
 /**
  * @function runMultipleQuries
@@ -18,7 +19,7 @@ function runMultipleQuries(data,database,connection){
             })
         }else if(database==='postgres'){
             promise = eachquery.map((item) =>{
-                return runInPostgres(item,connection)
+                return pgconnect.executequery(item,connection)
             })
         }else {
             reject('Invalid database '+database+' provided')

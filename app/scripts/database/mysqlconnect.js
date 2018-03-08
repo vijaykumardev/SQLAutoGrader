@@ -37,11 +37,17 @@ function executequery(query,connection){
                  }
                 
            }else{
+               console.log(rows[0].id)
+               var fieldnames = []
+                  //Extract field name from the fields object
+                  for(var i =0; i < fields.length;i++)
+                  fieldnames[i] = fields[i].name
+               //var fieldnames = 
                returnVal = {
                    query: query,
                    err: false,
                    result: rows,
-                   fields: fields
+                   fields: fieldnames
                }
            }
            resolve(returnVal)

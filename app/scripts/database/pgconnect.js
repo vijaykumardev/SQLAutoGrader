@@ -1,4 +1,6 @@
-const mysql = require('pg')
+const pg = require('pg')
+const PORT = 5432
+pg.defaults.ssl = true;
 
 /** @function establishconnection
 * @description Creates and returns pg connection object
@@ -12,17 +14,19 @@ function establishconnection(params){
             user : params.name,
             password : params.password,
             database : params.name,
-            port: 5432
+            port: PORT
         }
         
         var pool = new pg.Pool(pgcon)
-        connection.connect((err,client,done)=>{
-            if(err) reject(err)
-            else
-            resolve({
-                execute: client,
-                endconnection: done
-            })
+        pool.connect((err,client,done)=>{
+            if(err) reject(err.message+'\n'+err.hint+'\n'+'Error found at position '+err.position)
+            else{
+                var connection = {
+                    execute: client,
+                    endconnection: done
+                }
+                resolve(connection)
+            }            
         })
     })
 }
@@ -39,21 +43,26 @@ function executequery(query,connection){
         var returnVal = {}
 
 
-            connection.execute.query(query,(err,result,fields)=>{
+            connection.execute.query(query,(err,result)=>{
                 connection.endconnection()
                 if(err){
-                    returnVal = {
+                   returnVal = {
                    query : query,
                    err : true,
-                   result : err.sqlMessage,
+                   result : err.message+'\n'+err.hint+'\n'+'Error found at position '+err.position,
                    fields : null
                     }
                    
               }else{
+                  console.log(result.rows)
+                  var fields = []
+                  //Extract field name from the fields object
+                  for(var i =0;i<result.fields.length;i++)
+                    fields[i] = result.fields[i].name
                   returnVal = {
                       query: query,
                       err: false,
-                      result: rows,
+                      result: result.rows,
                       fields: fields
                   }
             }
