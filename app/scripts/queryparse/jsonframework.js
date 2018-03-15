@@ -1,6 +1,5 @@
 //user defined script file imports
 const valuetype = require('../utils/valuetype')
-
 /**
  * @function caseStatement
  * @description - builds the json format of case statement
@@ -25,8 +24,8 @@ const valuetype = require('../utils/valuetype')
 function caseStatement(conditionResult,value,result){
     var condition = []
     for(let each of conditionResult)
-        condition.push({conditon:identifier(each.condition),result:identifier(each.result)})
-    return {type : 'case_expr',value: {value:(value===null)?null:identifier(value),cond_result:condition,default:(result===null)?null:identifier(result)}}
+        condition.push({condition:identifier(each.condition),result:identifier(each.result)})
+    return {type : 'case_expr',value: {value:(value==null)?null:identifier(value),cond_result:condition,default:(result===null)?null:identifier(result)}}
 }
 
 

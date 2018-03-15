@@ -1,4 +1,6 @@
 const sqlparser = require('node-sqlparser')
+const preparser = require('./pre-parser')
+const postparser = require('./postparser')
 
 /**
  * @function simplifyquery(sql)
@@ -99,5 +101,68 @@ function stringifyconditions(whereclause){
 } //stringifyconditions
 
 module.exports = {
-    simquery: simplifyquery
+    simquery : simplifyquery,
+    parse : parseSQL
 }
+
+function parseSQL(query, variableStore, storeIndex) {
+    return new Promise((resolve,reject)=>{
+        var result = {
+            query: query,
+            store: variableStore,
+            index: storeIndex,
+            json: null
+        }
+        preparser.replaceAllString(result).then((result) => {
+            console.log('Strings')
+            preparser.replaceNotNull(result).then((result) => {
+                console.log('NotNull')
+                preparser.removeExtraSpaces(result).then((result) => {
+                    console.log('ExtraSpace')
+                    preparser.replaceFunction(result).then((result) => {
+                            console.log('Function')
+                        preparser.buildCaseJSON(result).then((result) => {
+                            console.log('buildCase')
+                            console.log(result)
+                            //TODO: Error: reduceSubQuery has an error execution not going further
+                            preparser.reduceSubQuery(result).then((result)=>{
+                                console.log('reduceQuery:'+result)
+                                preparser.buildHavingJSON(result).then((result)=>{
+                                    console.log(result)
+                                  postparser.replaceMapValues(result).then((result)=>{
+                                      console.log('finally:'+result.json)
+                                  })
+                                }).catch((err)=>{
+                                    reject('Error in  buildHavingJSON :'+err)
+                                })
+                            }).catch((err)=>{
+                                reject('Error in  reduceSubQuery:'+err)
+                            })
+                        }).catch((err)=>{
+                            reject('Error in buildCaseJSON:'+err)
+                        })
+                    }).catch((err)=>{
+                        reject('Error in replaceFunction:'+err)
+                    })
+                }).catch((err)=>{
+                    reject('Error in  removeExtraSpaces:'+err)
+                })
+    
+            }).catch((err)=>{
+                reject('Error in  replaceNotNULL:'+err)
+            })
+        }).catch((err) => {
+            reject('Error in replaceAllString:' + err)
+        })
+    })
+}
+
+parseSQL("SELECT	today td,CASE ('released')  WHEN 1987 THEN CONCAT(title, ' | ', released, ' | ', 'before') WHEN 1988 THEN CONCAT(title, ' | ', released, ' | ', 'same') WHEN 1989 THEN CONCAT(title, ' | ', released, ' | ', 'after') END AS output FROM albums WHERE released BETWEEN 1987 AND '1989'",new Map(),0).then((values)=>{
+    console.log(values)
+})
+
+// parseSQL("SELECT COUNT(album_id) AS collabAlbums FROM artist_album HAVING (COUNT(album_id) > 1)",new Map(),0).then((values)=>{
+//     console.log(values)
+// })
+
+//console.log(preparser.stringReplaceVal)

@@ -7,8 +7,16 @@
     "test": "node server.js",
     "start": "nodemon -e css,ejs,js,json --watch app app/app.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vijaykumardev/SQLAutoGrader.git"
+  },
   "author": "vijay",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vijaykumardev/SQLAutoGrader/issues"
+  },
+  "homepage": "https://github.com/vijaykumardev/SQLAutoGrader.git#readme",
   "dependencies": {
     "bcrypt-nodejs": "0.0.3",
     "cookie-parser": "^1.4.3",

@@ -8,6 +8,5 @@ $(document).ready(function(){
         $(this).parent().next('#collapsible-panels div').slideToggle('slow');
         //set the current item as active
         //$(this).parent().toggleClass('active')
-        
     })
 })
