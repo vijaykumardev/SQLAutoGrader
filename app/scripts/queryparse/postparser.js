@@ -1,38 +1,38 @@
 var preparser = require('./pre-parser')
 
 module.exports = {
-    replaceMapValues : replaceMapValues
+    replaceMapValues: replaceMapValues
 }
 
 
-function replaceFuncMap(store,columnValue){
-    return new Promise((resolve,reject)=>{
+function replaceFuncMap(store, columnValue) {
+    return new Promise((resolve, reject) => {
         var argList = []
         var promise = []
-        promise = columnValue.args.map((item)=>{
-            if(item.type==='column_ref'&&item.column.includes(preparser.stringReplaceVal)||item.column.includes(preparser.notNullReplaceVal)){
-            return    reccurReplaceValue(store,store.get(item.column))
+        promise = columnValue.args.map((item) => {
+            if (item.type === 'column_ref' && item.column.includes(preparser.stringReplaceVal) || item.column.includes(preparser.notNullReplaceVal)) {
+                return reccurReplaceValue(store, store.get(item.column))
             } else {
-            return    reccurReplaceValue(store,item)
+                return reccurReplaceValue(store, item)
             }
         })
 
-        Promise.all(promise).then((value)=>{
-            
+        Promise.all(promise).then((value) => {
+
             argList.push(value)
-        }).then(()=>{
-         columnValue.args=argList[0]
-         resolve(columnValue)
+        }).then(() => {
+            columnValue.args = argList[0]
+            resolve(columnValue)
         })
-         
+
     })
 }
 
-function replaceCaseCondResult(store,columnValue){
-    return new Promise((resolve,reject)=>{
-        reccurReplaceValue(store,columnValue.condition).then((condition)=>{
-            reccurReplaceValue(store,columnValue.result).then((result)=>{
-                resolve({condition:condition,result:result})
+function replaceCaseCondResult(store, columnValue) {
+    return new Promise((resolve, reject) => {
+        reccurReplaceValue(store, columnValue.condition).then((condition) => {
+            reccurReplaceValue(store, columnValue.result).then((result) => {
+                resolve({ condition: condition, result: result })
             })
         })
         //resolve({condition:reccurReplaceValue(store,columnValue.condition),result:reccurReplaceValue(store,columnValue.result)})
@@ -40,26 +40,28 @@ function replaceCaseCondResult(store,columnValue){
 }
 
 //Implement this with promises
-function replaceCaseMap(store,columnValue){
-    return new Promise((resolve,reject)=>{
+function replaceCaseMap(store, columnValue) {
+    return new Promise((resolve, reject) => {
         var valueCase = columnValue.value.value
         var condResultCase = columnValue.value.cond_result
         var defaultCase = columnValue.value.default
         var condResultCaseNew = []
-        reccurReplaceValue(store,valueCase).then((value)=>{
+        reccurReplaceValue(store, valueCase).then((value) => {
             valueCase = value
-            columnValue.value.value=value
-            reccurReplaceValue(store,defaultCase).then((value)=>{
-                defaultCase=value
-                columnValue.value.default=value
-                if(condResultCase.length>0){
-                    var promise = condResultCase.map((item)=>{
-                        return replaceCaseCondResult(store,item)
+            console.log(value)
+            console.log(defaultCase)
+            columnValue.value.value = value
+            reccurReplaceValue(store, defaultCase).then((value) => {
+                defaultCase = value
+                columnValue.value.default = value
+                if (condResultCase.length > 0) {
+                    var promise = condResultCase.map((item) => {
+                        return replaceCaseCondResult(store, item)
                     })
-                    Promise.all(promise).then((result)=>{
+                    Promise.all(promise).then((result) => {
                         condResultCaseNew.push(result)
-                    }).then(()=>{
-                        columnValue.value.cond_result=condResultCaseNew[0]
+                    }).then(() => {
+                        columnValue.value.cond_result = condResultCaseNew[0]
                         //TODO: warning: check and see why 
                         resolve(columnValue)
                     })
@@ -70,22 +72,38 @@ function replaceCaseMap(store,columnValue){
     })
 }
 
-function reccurReplaceValue(store,columnValue){
-    return new Promise((resolve,reject)=>{
-        //console.log('call:'+JSON.stringify(columnValue))
+function reccurReplaceValue(store, columnValue) {
+    return new Promise((resolve, reject) => {
+        console.log('call:'+JSON.stringify(columnValue))
+        
         // If no substitution is necessary then return as it it
-        if(columnValue==null||(columnValue.db!=null&&columnValue.table!=null)||columnValue.type==='number'||columnValue.type==='string'||columnValue.type==='bool'||columnValue.type==='null'||columnValue.type==='not null'){
+        if (columnValue == null || (columnValue.db != null && columnValue.table != null) || columnValue.type === 'number' || columnValue.type === 'string' || columnValue.type === 'bool' || columnValue.type === 'null' || columnValue.type === 'not null' || columnValue.type === 'star') {
+            console.log(columnValue)
             resolve(columnValue)
         }
-        if(columnValue.expr!=null){
-            reccurReplaceValue(store,columnValue.expr).then((value)=>{
-                resolve({"expr":value,"as":columnValue.as})
+        if (columnValue.expr != null) {
+            reccurReplaceValue(store, columnValue.expr).then((value) => {
+                columnValue.expr = value
+                resolve(columnValue)
             })
         }
-       
-        if(columnValue.type!=null&&columnValue.type==='column_ref'){
-            if(columnValue.column.includes(preparser.stringReplaceVal)||columnValue.column.includes(preparser.notNullReplaceVal)){
-                reccurReplaceValue(store,store.get(columnValue.column)).then((value)=>{
+
+        if(columnValue!=null&&columnValue.type==='select'){
+            var result = {
+                store:store,
+                json:columnValue
+            }
+            console.log('select:'+JSON.stringify(columnValue))
+            //Reduce all inner query value terms
+            replaceMapValues(result).then((innerQuery)=>{
+                console.log('reduced:'+JSON.stringify(innerQuery))
+                resolve(innerQuery.json)
+            })            
+        }
+
+        if (columnValue.type != null && columnValue.type === 'column_ref') {
+            if (columnValue.column.includes(preparser.stringReplaceVal) || columnValue.column.includes(preparser.notNullReplaceVal)) {
+                reccurReplaceValue(store, store.get(columnValue.column)).then((value) => {
                     resolve(value)
                 })
             } else {
@@ -93,125 +111,141 @@ function reccurReplaceValue(store,columnValue){
             }
         }
 
+        if(columnValue.type === 'not null'){
+            resolve(columnValue)
+        }
+
         //TODO: Implement for other type like case, function
-        if(columnValue.type==='case_expr'){
-            replaceCaseMap(store,columnValue).then((value)=>{
+        if (columnValue.type === 'case_expr') {
+            replaceCaseMap(store, columnValue).then((value) => {
                 resolve(value)
             })
         }
 
         //expr_func
-        if(columnValue.type==='expr_func'){
-         
-         if(columnValue.args!==null){
-             replaceFuncMap(store,columnValue).then((value)=>{
-                 resolve(value)
-             })
-         }
-     }
-
-     //binary_expr
-     if(columnValue.type==='binary_expr'){
-         reccurReplaceValue(store,columnValue.left).then((left)=>{
-                columnValue.left=left
-                console.log('before:'+JSON.stringify(columnValue))
-             reccurReplaceValue(store,columnValue.right).then((right)=>{
-                columnValue.right=right
+        if (columnValue.type === 'expr_func') {
+            console.log(columnValue.args)
+            if (columnValue.args !== null) {
+                replaceFuncMap(store, columnValue).then((value) => {
+                    resolve(value)
+                })
+            } else {
                 resolve(columnValue)
-             })
-         })
-     }
+            }
+        }
 
-     //expr_list
-     if(columnValue.type==='expr_list'){
-         var exprList = []
-         var promise = columnValue.value.map((item)=>{
-             return reccurReplaceValue(store,item)
-         })
-         Promise.all(promise).then((value)=>{
-            exprList.push(value)
-         }).then(()=>{
-             resolve(exprList[0])
-         })
-     }
+        if(columnValue.type === 'aggr_func'){
+            if(columnValue.args !== null){
+                console.log(columnValue.args)
+                reccurReplaceValue(store,columnValue.args).then((value)=>{
+                    columnValue.args=value
+                    resolve(columnValue)
+                })
+            } else {
+                resolve(columnValue)
+            }
+        }
 
+        //binary_expr
+        if (columnValue.type === 'binary_expr') {
+            console.log('---binary_expr:'+JSON.stringify(columnValue.left))
+            console.log('---binary_expr:'+JSON.stringify(columnValue.right))
+            reccurReplaceValue(store, columnValue.left).then((left) => {
+                console.log('--left:'+left)
+                columnValue.left = left
+                reccurReplaceValue(store, columnValue.right).then((right) => {
+                    console.log('---right:'+JSON.stringify(right))
+                    columnValue.right = right
+                    console.log('---right1:'+JSON.stringify(columnValue))
+                    //resolve(columnValue)
+                }).then(()=>{
+                    resolve(columnValue)
+                })
+            })
+        }
+
+        //expr_list
+        if (columnValue.type === 'expr_list') {
+            var exprList = []
+            var promise = columnValue.value.map((item) => {
+                return reccurReplaceValue(store, item)
+            })
+            Promise.all(promise).then((value) => {
+                exprList.push(value)
+            }).then(() => {
+                resolve(exprList[0])
+            })
+        }
+
+        //inner_query
+        //TODO: test inner query post parser
+        if(columnValue.type === 'inner_query'){
+            console.log(columnValue)
+            reccurReplaceValue(store, columnValue.value).then((innerquery) => {
+                console.log('&&&:'+JSON.stringify(innerquery))
+                resolve(innerquery)
+            })
+        }
     })
 }
 
-function replaceMapValues(result){
-    return new Promise((resolve,reject)=>{
+function replaceMapValues(result) {
+    return new Promise((resolve, reject) => {
         sqlJSON = result.json
-        var columns=from=limit=where=groupby=orderby=distinct = [];
-        var JSONColumns = []
-        var JSONFrom = []
+        var columns = from = limit = where = groupby = orderby = distinct = [];
+
         console.log(JSON.stringify(sqlJSON))
-        if(sqlJSON.type==='select'){
-        
-            if(sqlJSON.columns!==null){
-            columns = sqlJSON.columns.map((item)=>{
-                return reccurReplaceValue(result.store,item)
-            })
-            Promise.all(columns).then((value)=>{
-                JSONColumns.push(value)
-            }).then(()=>{
-                sqlJSON.columns = JSONColumns[0]
-            })
-            //resolve(sqlJSON)
-            } //select
-            
-            if(sqlJSON.from!==null){
-                console.log(sqlJSON.from)
-            from = sqlJSON.from.map((item)=>{
-                return reccurReplaceValue(result.store,item)
-            })
-            Promise.all(from).then((value)=>{
-                JSONFrom.push(value)
-            }).then(()=>{
-                console.log(JSON.stringify(JSONFrom[0]))
-                sqlJSON.from = JSONFrom[0]
-            })
-         } //from
-        
-         if(sqlJSON.where!==null){
-            console.log('where1:'+sqlJSON.where)
-        reccurReplaceValue(result.store,sqlJSON.where).then((where)=>{
-            console.log('where:'+JSON.stringify(where))
-            sqlJSON.where = where
-        })
-    }
-        if(sqlJSON.having!==null){
-            console.log(sqlJSON.having)
-            reccurReplaceValue(result.store,sqlJSON.having).then((having)=>{
-                console.log('having:'+JSON.stringify(having))
-                sqlJSON.having = having
+        if (sqlJSON.type === 'select') {
+
+            console.log('+++:'+JSON.stringify(sqlJSON.columns))
+            //TODO: Error: it is returning previous result of columns then current result
+            replaceClauseList(result.store, sqlJSON.columns).then((columns) => {
+                sqlJSON.columns = columns
+                replaceClauseList(result.store, sqlJSON.from).then((from) => {
+                    sqlJSON.from = from
+                    reccurReplaceValue(result.store,sqlJSON.where).then((where)=>{
+                        sqlJSON.where = where
+                        replaceClauseList(result.store, sqlJSON.groupby).then((groupby) => {
+                            sqlJSON.groupby = groupby
+                            replaceClauseList(result.store, sqlJSON.orderby).then((orderby) => {
+                                sqlJSON.orderby = orderby
+                                reccurReplaceValue(result.store, sqlJSON.having).then((having) => {
+                                    sqlJSON.having = having
+                                    replaceClauseList(result.store,sqlJSON.limit).then((limit)=>{
+                                        sqlJSON.limit = limit
+                                        //console.log('End:'+JSON.stringify(sqlJSON))
+                                        result.json=sqlJSON
+                                        resolve(result)
+                                    })
+                                })
+                            })
+                        })
+                    })
+                })
             })
         }
-            // where = stringifyconditions(sqlJSON.where)
-            
-            // if(sqlJSON.limit!==null){
-            // limit = sqlJSON.limit.map((item)=>{
-            //     return item.value
-            // }).join(",")
-            // } //limit
-            
-            // if(sqlJSON.groupby!==null){
-            //     groupby = sqlJSON.groupby.map((item)=>{
-            //         if(item.type==='column_ref'){
-            //             if(item.table !== '')
-            //                 return item.table+'.'+item.column
-            //             return item.column
-            //         }
-            //     }).join(",")
-            // } //groupby
-        
-            // if(sqlJSON.orderby!==null){
-            //     orderby = sqlJSON.orderby.map((item)=>{
-            //         if(item.expr.type==='column_ref'){
-            //             if(item.expr.table !== '')
-            //                 return item.expr.table+'.'+item.expr.column+' '+item.type
-            //             return item.expr.column+' '+item.type
-            //         }
-            //     }).join(",")
-            } //orderby
-})
+
+    })
+
+    function replaceClauseList(store, columnValue) {
+        return new Promise((resolve, reject) => {
+            if (columnValue === null||columnValue===undefined) {
+                resolve(null)
+            } else if(columnValue==='*'){
+                resolve(columnValue)
+            }
+            var jsonExpand = []
+            var clause = columnValue.map((item) => {
+                console.log('item:'+JSON.stringify(item))
+                return reccurReplaceValue(store, item)
+            })
+            Promise.all(clause).then((value) => {
+                console.log(value)
+                jsonExpand.push(value)
+            }).then(() => {
+                console.log('jsonExpand:' + JSON.stringify(jsonExpand[0]))
+                resolve(jsonExpand[0])
+            })
+        })
+    }
 }

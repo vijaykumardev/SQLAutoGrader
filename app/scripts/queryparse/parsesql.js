@@ -124,13 +124,14 @@ function parseSQL(query, variableStore, storeIndex) {
                         preparser.buildCaseJSON(result).then((result) => {
                             console.log('buildCase')
                             console.log(result)
-                            //TODO: Error: reduceSubQuery has an error execution not going further
                             preparser.reduceSubQuery(result).then((result)=>{
                                 console.log('reduceQuery:'+result)
                                 preparser.buildHavingJSON(result).then((result)=>{
+                                    console.log('having')
                                     console.log(result)
                                   postparser.replaceMapValues(result).then((result)=>{
-                                      console.log('finally:'+result.json)
+                                      console.log('postparser')
+                                      resolve(result)
                                   })
                                 }).catch((err)=>{
                                     reject('Error in  buildHavingJSON :'+err)
@@ -157,12 +158,31 @@ function parseSQL(query, variableStore, storeIndex) {
     })
 }
 
-parseSQL("SELECT	today td,CASE ('released')  WHEN 1987 THEN CONCAT(title, ' | ', released, ' | ', 'before') WHEN 1988 THEN CONCAT(title, ' | ', released, ' | ', 'same') WHEN 1989 THEN CONCAT(title, ' | ', released, ' | ', 'after') END AS output FROM albums WHERE released BETWEEN 1987 AND '1989'",new Map(),0).then((values)=>{
-    console.log(values)
-})
-
-// parseSQL("SELECT COUNT(album_id) AS collabAlbums FROM artist_album HAVING (COUNT(album_id) > 1)",new Map(),0).then((values)=>{
+// parseSQL("SELECT	CASE ('released')  WHEN 1987 THEN CONCAT(title, ' | ', released, ' | ', 'before') WHEN 1988 THEN CONCAT(title, ' | ', released, ' | ', 'same') WHEN 1989 THEN CONCAT(title, ' | ', released, ' | ', 'after') END AS output FROM albums WHERE released BETWEEN 1987 AND '1989'",new Map(),0).then((values)=>{
 //     console.log(values)
 // })
 
-//console.log(preparser.stringReplaceVal)
+// parseSQL("SELECT title,CASE ('released')  WHEN 1987 THEN 'before' WHEN 1988 THEN 'same' END AS output FROM albums where released is not null group by title,released having released=1987 or released=1988",new Map(),0).then((values)=>{
+//     console.log(values)
+// })
+
+// parseSQL("select a.name, al.title, al.released from artists a join artist_album aa on a.id = aa.artist_id join albums al on aa.album_id = al.album_id where al.released is null ",new Map(),0).then((values)=>{ 
+//     console.log(JSON.stringify(values.json))
+//     console.log(values)
+// })
+
+//TODO: Implement inner query
+// parseSQL("SELECT ((SELECT COUNT(album_id) FROM albums WHERE released IS NOT NULL) / (SELECT COUNT(DISTINCT released) FROM albums)) AS avgAlbums",new Map(),0).then((values)=>{
+//     console.log(values.query)
+//     console.log(values.store)
+//     console.log(values.json)
+//     console.log('---------------')
+//     console.log(values.json.columns[0].expr.expr.right.columns[0].expr.expr.right.columns[0].expr.expr.right.columns[0].expr.expr.right)
+//     //console.log(JSON.stringify(values.json))
+// })
+
+// console.log(sqlparser.parse('select * from albums having album_id=1'))
+
+//console.log(sqlparser.parse('SELECT DISTINCT p.first_name, p.surname FROM people p join credits c on p.peopleid = c.peopleid  join movies m on m.movieid = c.movieid WHERE m.title=rep_string_0 and c.credited_as=rep_string_1  ORDER BY p.first_name, p.surname ASC'))
+
+console.log(sqlparser.parse('select * from vijayv.albums al'))

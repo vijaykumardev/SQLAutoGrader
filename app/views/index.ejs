@@ -8,8 +8,11 @@
 </style>
 <body id="<%= pageID %>">
   <div class="container">
-          <div class="col-sm-6 col-sm-offset-3">
+          <div class="col-sm-8 col-sm-offset-2">
   <% include partials/template/maininput.ejs %>
+  <% if(typeof questions != undefined) { %>
+    <% include partials/template/questions.ejs %>
+  <% } %>
   <% if(pageID==='mysql-result'||pageID==='postgres-result') { %>
     <% include partials/template/queryoutput.ejs %>
   <% } %>

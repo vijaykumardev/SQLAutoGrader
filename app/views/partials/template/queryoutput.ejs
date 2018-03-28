@@ -1,4 +1,6 @@
 <% if(typeof query != 'undefined' ){ %>
+    <h3><% if(typeof selectedAssign != 'undefined'){ %>Assignment <%= selectedAssign %><% } %></h3>
+    <h3><% if(typeof selectedQuest != 'undefined'){ %>Question <%= selectedQuest %><% } %></h3>
     <h3><%= query %></h3>
     <div id="collapsible-panels">
     

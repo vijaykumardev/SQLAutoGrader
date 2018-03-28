@@ -20,7 +20,7 @@ const caseWhenThenEach = /when\s+([0-9a-zA-Z._$]*)\s+then\s+([0-9a-zA-Z._$]*)\s+
 const caseElse = /else\s+([0-9a-zA-Z._$]*)\send/i
 const wordSQL = /[0-9,a-z,A-Z$_]*/
 const functionCall = /([0-9a-zA-Z$_.]*)\((\s*[0-9a-zA-Z$_.]*\s*,\s*)*\s*([0-9a-zA-Z$_.]*){1}\s*\)/g
-const notNullRegExp = /(not null)/i
+const notNullRegExp = /\s+(not null)[)]?\s+/i
 const stringRegExp = /'[^']*'/g
 const paranSearch = /\([^)]*\)/
 
@@ -62,8 +62,8 @@ function removeExtraSpaces(result){
  * @return {JSON} - JSON format of the output if parsed else an empty JSON
 */
 function parseSQL(inVar){
-if(/^select/i.exec(inVar)){
-    console.log('inside')
+
+if(/^\(?select/i.exec(inVar)){
     return sqlparser.parse(inVar)
     
 }else {
@@ -98,8 +98,8 @@ function reduceSubQuery(result){
         var before=''
         var subRes=''
         var parsedSQL = {}
-
-        while(res){
+if(res){
+    while(res){
         subRes = res[0].slice(res[0].lastIndexOf("(")) 
         if(subRes){
             
@@ -109,7 +109,9 @@ function reduceSubQuery(result){
                 if(!/(select|where|from|group by|having|order by|limit)/i.exec(before))
                     subRes=before+subRes
                 }
+                console.log('before:'+subRes)
                 parsedSQL = parseSQL(subRes)
+                console.log('after:'+parsedSQL)
                 //TODO: identify is the subRes has having expression remove having expression and call parseSQL and append having JSON in its place
                 console.log(subRes+':'+JSON.stringify(parsedSQL))
             addToStore(subRes,result,/^\(\s*select/i.exec(subRes)?jsonframework.innerQuery(parsedSQL):parsedSQL).then((value)=>{
@@ -118,10 +120,10 @@ function reduceSubQuery(result){
             console.log(result)
         }
         res=paranSearch.exec(result.query)
-        resolve(result)
         }
+}
         
-        
+        resolve(result)
     })
 
 }
@@ -264,12 +266,12 @@ function replaceAllString(result){
  */
 function replaceNotNull(result){
     return new Promise((resolve,reject)=>{
-
-        if(notNullRegExp.exec(result.query)){
-            if(!result.store.has(notNullReplaceVal)){
-                result.store.set(notNullReplaceVal,jsonframework.identifier('not null'))
+        var notNull = notNullRegExp.exec(result.query)
+        if(notNull){
+            addToStore(notNull[1],result,jsonframework.identifier('not null')).then((value)=>{
+                result = value
                 resolve(result)
-            }
+            })
         }else{
             resolve(result)
         }

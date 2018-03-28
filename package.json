@@ -4,8 +4,8 @@
   "description": "Takes a query file containing a set of query and executes in database to check the correctness of query displaying the result in html page",
   "main": "app/app.js",
   "scripts": {
-    "test": "node server.js",
-    "start": "nodemon -e css,ejs,js,json --watch app app/app.js"
+    "test": "jasmine",
+    "start": "nodemon -e css,ejs,js --watch app app/app.js"
   },
   "repository": {
     "type": "git",
@@ -28,5 +28,8 @@
     "pg": "^7.4.1",
     "querystring": "^0.2.0",
     "reload": "^2.2.2"
+  },
+  "devDependencies": {
+    "jasmine": "^3.1.0"
   }
 }

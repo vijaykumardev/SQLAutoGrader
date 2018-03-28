@@ -2,6 +2,9 @@ const express = require('express')
 const router = express.Router()
 const mysqlconn = require('../scripts/config/mysql')
 const postgresconn = require('../scripts/config/postgres')
+const readdir = require('../scripts/file/read-directory')
+
+const JSON_PATH='app/public/json/questions/'
 
 router.get('/login', function(req, res) {
   // Get the visitor name set in the cookie 
@@ -17,6 +20,8 @@ router.get('/login', function(req, res) {
             res.redirect('mysql')
         }).catch((err)=>{
             res.render('./partials/content/login.ejs',{
+                pageTitle: 'Login',
+                pageID: 'login',
                 message: err
             }) 
         })
@@ -27,6 +32,8 @@ router.get('/login', function(req, res) {
                 res.redirect('postgres')
             }).catch((err)=>{
                 res.render('./partials/content/login.ejs',{
+                    pageTitle: 'Login',
+                    pageID: 'login',
                     message: err
                 })
         })
@@ -35,12 +42,15 @@ router.get('/login', function(req, res) {
     req.session.message = null
     // render the page and pass in any flash data if it exists
     res.render('./partials/content/login.ejs',{
-        message: message
+        message: message,
+        pageTitle: 'Login',
+        pageID: 'login'
     }) 
 }
 })
 
 router.post('/login',(req,res)=>{
+    var questions = []
     var credential = {
         name:req.body.name,
         password: req.body.password,
@@ -51,13 +61,26 @@ router.post('/login',(req,res)=>{
     if(req.body.database==='mysql'){
         console.log('inside mysql')
         mysqlconn(req.body).then((connection)=>{
+            readdir.readLoadFiles(JSON_PATH).then((contents)=>{ contents.forEach((item)=>{
+                    questions.push(JSON.parse(item))
+                })
+             }).then(()=>{
+                 req.session.questions = questions
             res.redirect(req.body.database)
+             })
         }).catch((err)=>{
             message = err
     })
     }else if(req.body.database ==='postgres'){
         postgresconn(req.body).then((connection)=>{
+            readdir.readLoadFiles(JSON_PATH).then((contents)=>{
+                contents.forEach((item)=>{
+                    questions.push(JSON.parse(item))
+                })
+             }).then(()=>{
+                 req.session.questions = questions
             res.redirect(req.body.database)
+             })
         }).catch((err)=>{
             message = err
     })

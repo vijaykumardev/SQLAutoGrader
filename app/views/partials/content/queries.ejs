@@ -1,0 +1,24 @@
+<!doctype html>
+
+<head>
+  <% include ../template/head.ejs %>
+</head>
+<body id="<%= pageID %>">
+    <h4><%= name %></h4>
+    <h4><%= pageID %></h4>
+    <div class="container">
+            
+<form method='POST'>
+        <div class="col-sm-6 col-sm-offset-3">
+            <% include ../template/questions.ejs %>
+            <% include ../template/query-in.ejs %>
+        <button type="submit" class="btn btn-primary" name="submit" value="run" >Run</button>
+        <button type="submit" class="btn btn-success pull-right" name="submit" value="save">Submit</button>
+    </div>
+</form>
+    <div class="col-sm-8 col-sm-offset-2">
+    <% include ../template/queryoutput.ejs %>
+    </div>
+    <% include ../template/jsdefaults.ejs %>
+</body>
+</html>

@@ -15,7 +15,7 @@ const notNullRegExp = /^not null$/i
 /**
  * @function checkValueType
  * @description check the type of the value stored in a variable
- * @param {string} value 
+ * @param {String} identifier 
  * @return {"null"|"bool"|"number"|"column_ref"|"string"} returns the type of value stored in the variable
  */
 function checkValueType(identifier){
@@ -30,10 +30,9 @@ function checkValueType(identifier){
         else if(stringRegExp.exec(identifier))
             return 'string'
         //If the value is of extended sql JSON type
-        else if(columnRegExp.exec(identifier)){
-            console.log(identifier+'column_ref')
+        else if(columnRegExp.exec(identifier))
             return 'column_ref'
-        }
+        
         
     return 'string'
 }

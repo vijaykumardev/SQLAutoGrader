@@ -1,5 +1,9 @@
 //user defined script file imports
 const valuetype = require('../utils/valuetype')
+
+//RegExp constant
+const columnTableRegExp = /([0-9a-zA-Z_$]+)\.([0-9a-zA-Z_$]+)/
+
 /**
  * @function caseStatement
  * @description - builds the json format of case statement
@@ -77,12 +81,22 @@ function innerQuery(query){
  */
 function identifier(identity){
     var type = valuetype.checkValueType(identity)
-    if(type==='number'||type==='string'||type==='bool'||type==='null'||type==='not null')
+    if(type==='number'||type==='string'||type==='bool'||type==='null'||type==='not null'){
         return {type:type,value:identity}
-    if(type==='column_ref')
-        return {type:type,table:'',column:identity}
-    throw `Error: type cannot be determined in identifier parameter ${identity} method 
-    at ./apps/scripts/queryparse/jsonframework.js`
+    }else if(type==='column_ref'){
+        var columnWithTable = columnTableRegExp.exec(identity)
+        if(columnWithTable){
+            var table = columnWithTable[1]
+            var column = columnWithTable[2]
+            return {type:type,table:table,column:column}
+
+        }else {
+            return {type:type,table:'',column:identity}
+        }
+    } else {
+        throw `Error: type cannot be determined in identifier parameter ${identity} method 
+        at ./apps/scripts/queryparse/jsonframework.js`
+    }
 }
 
 module.exports = {
@@ -91,3 +105,5 @@ module.exports = {
     innerQuery : innerQuery,
     identifier : identifier
 }
+
+console.log(columnTableRegExp.exec('album.album_id'))

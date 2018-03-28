@@ -2,17 +2,14 @@
 <!doctype html>
 <html>
 <head>
-    <title>Node Authentication</title>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css"> <!-- load bootstrap css -->
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css"> <!-- load fontawesome -->
-    <style>
-        body        { padding-top:80px; }
-    </style>
+    <% include ../template/head.ejs %>
 </head>
 <body>
 <div class="container">
 
-<div class="col-sm-6 col-sm-offset-3">
+<div class="col-sm-4 col-sm-offset-4">
 
     <h1><span class="fa fa-sign-in"></span> Login</h1>
     <% if (typeof warning!='undefined') { %>
@@ -40,7 +37,7 @@
                 <option value="postgres">Postgres</option>
               </select>
         </div>
-        <button type="submit" class="btn btn-warning btn-lg">Login</button>
+        <button type="submit" class="btn btn-warning btn-lg" name="run" value="run" >Login</button>
     </form>
 
     <hr>
