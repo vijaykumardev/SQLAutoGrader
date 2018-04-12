@@ -1,110 +1,23 @@
 const sqlparser = require('node-sqlparser')
 const preparser = require('./pre-parser')
 const postparser = require('./postparser')
-
-/**
- * @function simplifyquery(sql)
- * @description creates key-value pairs of all the clause in the sql query
- * @param {JSON} sql - json representation of the query
- * @returns {JSON} 
- */
-function simplifyquery(sql){
-    return new Promise((resolve,reject)=>{
-
-        sqlJSON = sqlparser.parse(sql)
-
-        var select=from=limit=where=groupby=orderby=distinct = null;
-        
-        if(sqlJSON.type==='select'){
-        
-            if(sqlJSON.distinct)
-                distinct=true
-            
-            if(sqlJSON.columns!==null){
-            select = sqlJSON.columns.map((item)=>{
-                if(item.expr.type==='number'||item.expr.type==='string')
-                    return item.expr.value
-                return item.expr.column
-            }).join(",")
-            } //select
-            
-            if(sqlJSON.from!==null){
-            from = sqlJSON.from.map((item)=>{
-                return item.table
-            }).join(",")
-            } //from
-        
-            where = stringifyconditions(sqlJSON.where)
-            
-            if(sqlJSON.limit!==null){
-            limit = sqlJSON.limit.map((item)=>{
-                return item.value
-            }).join(",")
-            } //limit
-            
-            if(sqlJSON.groupby!==null){
-                groupby = sqlJSON.groupby.map((item)=>{
-                    if(item.type==='column_ref'){
-                        if(item.table !== '')
-                            return item.table+'.'+item.column
-                        return item.column
-                    }
-                }).join(",")
-            } //groupby
-        
-            if(sqlJSON.orderby!==null){
-                orderby = sqlJSON.orderby.map((item)=>{
-                    if(item.expr.type==='column_ref'){
-                        if(item.expr.table !== '')
-                            return item.expr.table+'.'+item.expr.column+' '+item.type
-                        return item.expr.column+' '+item.type
-                    }
-                }).join(",")
-            } //orderby
-        
-        }
-        
-        var queryJSON = {
-            select: select,
-            from: from,
-            where: where,
-            groupby: groupby,
-            orderby: orderby,
-            limit: limit,
-            distinct: distinct
-        }
-        resolve(queryJSON)
-
-    })
-
-} //simplifyquery
+const compareResult = require('../evaluate/compare-result')
 
 
-/**
- * @function stringifyconditions
- * @param {JSON} whereclause
- * @description  returns the string object of the where JSON 
- * @return {string} 
- */
-function stringifyconditions(whereclause){
-    if(whereclause!==null){
-    if(whereclause.type==='binary_expr'){
-        return stringifyconditions(whereclause.left)+' '+whereclause.operator+' '+stringifyconditions(whereclause.right)
-    }else if(whereclause.type==='column_ref'){
-        if(whereclause.table !== '')
-            return whereclause.table+'.'+whereclause.column
-        return whereclause.column
-    }else if(whereclause.type==='number'){
-        return whereclause.value
-    }
-}
-} //stringifyconditions
 
 module.exports = {
-    simquery : simplifyquery,
     parse : parseSQL
 }
 
+/**
+ * @function parseSQL
+ * @description Takes an SQL query and converts into a JSON form
+ * @param {String} query an SQL query
+ * @param {Map<String,String>} variableStore A dictionary to store replacable values
+ * @param {Number} storeIndex counter for a dictionary
+ * @returns {JSON} JSON representation of the input query
+ * @example parseSQL("SELECT title,CASE ('released')  WHEN 1987 THEN 'before' WHEN 1988 THEN 'same' END AS output FROM albums where released is not null group by title,released having released=1987 or released=1988",new Map(),0)
+ */
 function parseSQL(query, variableStore, storeIndex) {
     return new Promise((resolve,reject)=>{
         var result = {
@@ -119,6 +32,7 @@ function parseSQL(query, variableStore, storeIndex) {
                 console.log('NotNull')
                 preparser.removeExtraSpaces(result).then((result) => {
                     console.log('ExtraSpace')
+                    console.log(result)
                     preparser.replaceFunction(result).then((result) => {
                             console.log('Function')
                         preparser.buildCaseJSON(result).then((result) => {
@@ -159,7 +73,13 @@ function parseSQL(query, variableStore, storeIndex) {
 }
 
 // parseSQL("SELECT	CASE ('released')  WHEN 1987 THEN CONCAT(title, ' | ', released, ' | ', 'before') WHEN 1988 THEN CONCAT(title, ' | ', released, ' | ', 'same') WHEN 1989 THEN CONCAT(title, ' | ', released, ' | ', 'after') END AS output FROM albums WHERE released BETWEEN 1987 AND '1989'",new Map(),0).then((values)=>{
-//     console.log(values)
+//     console.log(values.json)
+//     var solutionSQL = "select distinct title, released, case released when x - 1 then 'before' when x then 'same' else 'after' end compared_to_me from albums where released between x-1 and x+1"
+//     parseSQL(solutionSQL,new Map(),0).then((result)=>{
+//         compareResult.checkOutput(values.json,result.json).then((values)=>{
+//             console.log(values)
+//         })
+//     })
 // })
 
 // parseSQL("SELECT title,CASE ('released')  WHEN 1987 THEN 'before' WHEN 1988 THEN 'same' END AS output FROM albums where released is not null group by title,released having released=1987 or released=1988",new Map(),0).then((values)=>{
@@ -185,4 +105,4 @@ function parseSQL(query, variableStore, storeIndex) {
 
 //console.log(sqlparser.parse('SELECT DISTINCT p.first_name, p.surname FROM people p join credits c on p.peopleid = c.peopleid  join movies m on m.movieid = c.movieid WHERE m.title=rep_string_0 and c.credited_as=rep_string_1  ORDER BY p.first_name, p.surname ASC'))
 
-console.log(sqlparser.parse('select * from vijayv.albums al'))
+console.log(sqlparser.parse('select count(*) from vijayv.albums al where artist=5'))

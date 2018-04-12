@@ -10,7 +10,7 @@ function replaceFuncMap(store, columnValue) {
         var argList = []
         var promise = []
         promise = columnValue.args.map((item) => {
-            if (item.type === 'column_ref' && item.column.includes(preparser.stringReplaceVal) || item.column.includes(preparser.notNullReplaceVal)) {
+            if (item.type === 'column_ref' && String(item.column).includes(preparser.stringReplaceVal) || String(item.column).includes(preparser.notNullReplaceVal)) {
                 return reccurReplaceValue(store, store.get(item.column))
             } else {
                 return reccurReplaceValue(store, item)
@@ -102,7 +102,7 @@ function reccurReplaceValue(store, columnValue) {
         }
 
         if (columnValue.type != null && columnValue.type === 'column_ref') {
-            if (columnValue.column.includes(preparser.stringReplaceVal) || columnValue.column.includes(preparser.notNullReplaceVal)) {
+            if (String(columnValue.column).includes(preparser.stringReplaceVal) || String(columnValue.column).includes(preparser.notNullReplaceVal)) {
                 reccurReplaceValue(store, store.get(columnValue.column)).then((value) => {
                     resolve(value)
                 })

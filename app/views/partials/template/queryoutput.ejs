@@ -1,13 +1,11 @@
-<% if(typeof query != 'undefined' ){ %>
-    <h3><% if(typeof selectedAssign != 'undefined'){ %>Assignment <%= selectedAssign %><% } %></h3>
-    <h3><% if(typeof selectedQuest != 'undefined'){ %>Question <%= selectedQuest %><% } %></h3>
+    <!-- h3><% if(typeof selectedAssign != 'undefined'){ %>Assignment <%= selectedAssign %><% } %></h3 -->
+    <!-- h3><% if(typeof selectedQuest != 'undefined'){ %>Question <%= selectedQuest %><% } %></h3 -->
     <h3><%= query %></h3>
     <div id="collapsible-panels">
     
     <h4><a href="#">
         Query Output
     </a></h4>
-    <% } %>
         <% if(typeof result != 'undefined' ){ %>
             <div><%  if(!err){ %>
                 <table>
@@ -30,18 +28,70 @@
                 </table>
                 <%  } else { %>
                     <h4>
-                        <%= result %>
+                        <p class="failure">Error: <%= result %></p>
                     </h4>
                     <% } %></div>
                         <%  } %>
                         <% if(typeof json != 'undefined'){ %>
-                        <h4><a href="#">
+                        <h4 <% if(parseErr==true){ %>class="failure"<%}else{%>class="success"<%}%>><a href="#">
                             Query clauses
                         </a></h4>
                         <div class="container">
-                            <h4>Query 1: <%= query %></h4>
-                            <pre><%= JSON.stringify(json) %></pre>
-                            
+                                <% if(parseErr==true){ %><p class="failure">Failed to failed to extract SQL clauses due to error in <%if(err==true){%>query<%}else{%>parsing<%}%></p><%}else{%>
+                                    <% if(typeof sqlClause!='undefined'){ %>
+                                    <table><tr><th>SQL clause</th><th>Value</th></tr>
+                                    <% for(var i in sqlClause){ %>
+                                        <% if(sqlClause[i]!==null&&typeof sqlClause[i]!='undefined'){%>
+                                        <tr><td><strong><%=i%></strong></td><td><%=sqlClause[i]%></td></tr>
+                                        <% } %>
+                                    <% } %>
+                                    </table>
+                                <% } else { %>
+                                    <p class="failure">Unable to process JSON</p>
+                                    <pre><%= JSON.stringify(json) %></pre>
+                                <%} }%>
                         </div>
                     <% } %>
+                    <% if(typeof rowcount != 'null'){ %>
+                        <h4><a href="#">
+                            Query Output Analysis
+                        </a></h4>
+                        <div class="container">
+                            <% if(err!=true){ %>
+                                <% if(rowcount.obtained==rowcount.expected){ %>
+                                    <h5 class="success"><strong>Output rowcount</strong></h5>
+                               <p>Row count matched Expected:<%=rowcount.expected%> Obtained:<%=rowcount.obtained%></p> 
+                                <% } else { %>
+                                    <h5 class="failure"><strong>Output rowcount</strong></h5>
+                                    <p>Row count mismatched Expected:<%=rowcount.expected%> Obtained:<%= rowcount.obtained %></p>
+                                <%}} else { %>
+                                <h5 class="failure"><strong>Output rowcount</strong></h5>
+                                <p>Failed to compare rowcount due to query error</p>
+                            <% } %>
+                            <% if(outputCompare!=0){ %>
+                                <h5 class="failure"><strong>Output comparision</strong></h5>
+                                <% if(parseErr){ %><p>Failed to compare output due to error in <%if(err==true){%>query<%}else{%>parsing<%}%></p><%}else{%><p>Output mismatch by <%= outputCompare %> rows</p><%}%>
+                            <% } else { %>
+                                <h5 class="success"><strong>Output comparision</strong></h5>
+                                <p>Output matches exactly</p>
+                            <% } %>
+                        </div>
+                    <% } %>
+                    <% if(queryCompare!=null){ %>
+                    <h4><a href="#">Query Cluase Analysis</a></h4>
+                    <div class="container">
+                    <% if(queryCompare.tables.missing.length>0){ %>
+                        <p class="failure"><strong>Missing Tables in query: <%= queryCompare.tables.missing.map((item)=>{return item}).join(",") %></strong></p>
+                    <% } %>
+                    <% if(queryCompare.tables.additional.length>0){ %>
+                        <p class="failure"><strong>Extra Tables in query: <%= queryCompare.tables.additional.map((item)=>{return item}).join(",") %></strong></p>
+                    <% } %>
+                    <% if(queryCompare.columns.missing.length>0){ %>
+                        <p class="failure"><strong>Missing condition on columns: <%= queryCompare.columns.missing.map((item)=>{return item}).join(",") %></strong></p>
+                    <% } %>
+                    <% if(queryCompare.columns.additional.length>0){ %>
+                        <p class="failure"><strong>Extra condition on columns: <%= queryCompare.columns.additional.map((item)=>{return item}).join(",") %></strong></p>
+                    <% } %>
+                    <% } %>
+                    </div>
                 </div>

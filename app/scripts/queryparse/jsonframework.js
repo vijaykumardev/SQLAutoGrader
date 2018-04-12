@@ -81,7 +81,9 @@ function innerQuery(query){
  */
 function identifier(identity){
     var type = valuetype.checkValueType(identity)
-    if(type==='number'||type==='string'||type==='bool'||type==='null'||type==='not null'){
+    if(type==='star'){
+        return {type:type,value:'*'}
+    }else if(type==='number'||type==='string'||type==='bool'||type==='null'||type==='not null'){
         return {type:type,value:identity}
     }else if(type==='column_ref'){
         var columnWithTable = columnTableRegExp.exec(identity)
@@ -106,4 +108,4 @@ module.exports = {
     identifier : identifier
 }
 
-console.log(columnTableRegExp.exec('album.album_id'))
+//console.log(columnTableRegExp.exec('album.album_id'))

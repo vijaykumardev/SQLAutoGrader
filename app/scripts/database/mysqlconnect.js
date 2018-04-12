@@ -37,7 +37,6 @@ function executequery(query,connection){
                  }
                 
            }else{
-               console.log(rows[0].id)
                var fieldnames = []
                   //Extract field name from the fields object
                   for(var i =0; i < fields.length;i++)
@@ -55,8 +54,19 @@ function executequery(query,connection){
     })
 }
 
+function connectExecute(params,query){
+    return new Promise((resolve,reject)=>{
+        establishconnection(params).then((connection)=>{
+            executequery(query,connection).then((result)=>{
+            connection.end()
+            resolve(result)
+        })
+    })
+})
+}
 
 module.exports = {
     establishconnection :establishconnection,
-    executequery: executequery
+    executequery: executequery,
+    connectExecute:connectExecute
 }

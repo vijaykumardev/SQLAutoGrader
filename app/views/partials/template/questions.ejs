@@ -16,7 +16,7 @@
         <% } %>
     </select>
     </fieldset>
-    <p id="preSelectAssign"><% if (typeof selectedAssign!= 'undefined' ){ %>Assignment <%= selectedAssign %> <% } %></p><p  id="preSelectQuest"><% if (typeof selectedQuest != 'undefined' ){ %>Assignment <%= selectedQuest %> <% } %></p>
+    <!-- p id="preSelectAssign"><% if (typeof selectedAssign!= 'undefined' ){ %>Assignment <%= selectedAssign %> <% } %></p><p  id="preSelectQuest"><% if (typeof selectedQuest != 'undefined' ){ %>Assignment <%= selectedQuest %> <% } %></p -->
    <p><strong id="selected-assignment" pre-value="<% if (typeof selectedAssign!= 'undefined' ){ %><%= selectedAssign %><% } else { %>0<% } %>"></strong>><strong id="selected-question" pre-value="<% if (typeof selectedQuest!= 'undefined' ){ %><%= selectedQuest %><% } else { %>0<% } %>"></strong></p>
     <% for(var i in questions){ %> <% for(var j in questions[i].questions){ %>
         <p id="assignment-<%=i%>-question-<%=j%>" class="questions" ><%= questions[i].questions[j].question %></p>

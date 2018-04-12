@@ -32,9 +32,11 @@ function checkValueType(identifier){
         //If the value is of extended sql JSON type
         else if(columnRegExp.exec(identifier))
             return 'column_ref'
+        else if(identifier==='*')
+            return 'star'
         
         
-    return 'string'
+    return 'NONE'
 }
 
 module.exports={
